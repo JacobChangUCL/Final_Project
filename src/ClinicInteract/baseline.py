@@ -3,10 +3,13 @@
 from utils import evaluate, asking_question
 import json
 import random
-import openai
+import sys
 
-openai.api_key = "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"
+# openai-version should be 1.59.9 to support deepseek
 
+# openai.api_key = "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"
+# deepseek will use openai api format
+deepseek_api_key = "sk-2723f21ed00148bf971d4d5160ca3b31"
 
 
 class Dataset:
@@ -48,7 +51,7 @@ class Evaluator:
             [Diagnosis: xxxdisease].
             """
 
-    def start_evaluation(self, model_name="gpt4o"):
+    def start_evaluation(self, model_name="gpt-4o"):
         correct_num = 0
         for idx, _case in enumerate(self.dataset, start=1):
             print(f"Case {_case[1] + 1}")
@@ -58,8 +61,11 @@ class Evaluator:
             prompt = f"Below is all the information about the patient.{_case_copy}"
 
             answer = asking_question(model_name, prompt, self.system_prompt)
-
-            flag = evaluate(_case[0]["answer"], answer)  # "Yes" or "No"
+            print(answer)
+            doctor_diagnosis = answer.split("Diagnosis:")[1]
+            print(doctor_diagnosis)
+            print(f"True disease is {_case[0]['answer']},doctor diagnosis is {doctor_diagnosis}")
+            flag = evaluate(_case[0]["answer"], doctor_diagnosis)  # "Yes" or "No"
             if flag == "Yes":
                 correct_num += 1
             print(f"Accuracy={correct_num / idx:.2%},total {idx}cases,{correct_num}are right")
@@ -68,9 +74,13 @@ class Evaluator:
 
 
 # loading dataset
-file_path = "datasets/filtered_medqa_test_set_final_version.jsonl"
+file_path = "../datasets/filtered_medqa_test_set_final_version.jsonl"
 # add random selection of dataset
+save_path = "../experiment_record/deepseek-num50_fullInformation"
+
+# with open(save_path, "w", encoding="utf-8") as file:
+#     sys.stdout = file
 num_cases = 50
 dataset = Dataset(file_path).get_samples_by_number(num_cases)
 evaluator = Evaluator(dataset)
-evaluator.start_evaluation()
+evaluator.start_evaluation("deepseek-chat")

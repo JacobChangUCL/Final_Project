@@ -34,7 +34,7 @@ class Doctor:
         # 输出一段新的问题或检查请求，例如“你咳嗽有痰吗？持续了多久？”
     """
 
-    def __init__(self, backend="gpt4o", max_conversation=10):
+    def __init__(self, backend="gpt-4o", max_conversation=10):
         """
         Doctor doesn't need initial data in chinese clinical environment
         :param max_conversation: the max conversation between patient and doctor
@@ -67,7 +67,6 @@ class Doctor:
         else:
             input_prompt = f"You can ask a maximum of {self.max_conversation} questions before making a diagnosis. So far, you have asked {self.num_conversation} questions.\nBelow is your conversation history: {self.conversation_history}\n\n{patient_answer}P\n\nNow, please continue the conversation.\nDoctor: "
 
-        print("num_conversation=", self.num_conversation)
         question = asking_question(self.backend, input_prompt, self.system_prompt())
 
         self.conversation_history += "Patient:" + patient_answer + "\n" + "Doctor:" + question + "\n"  # 继续对话
@@ -82,9 +81,10 @@ class Doctor:
         1. Collect sufficient medical information from the patient through a limited number of questions (e.g., a maximum of 10 questions).
         2. Request laboratory tests when necessary, following this strict format: Order test: [Test Name].
         3. You may also request physical examinations through an assistant, strictly following this format: Order Physical Examination.
-        4. After gathering enough information, provide the final diagnosis using the format: Diagnosis: [Specific Diagnosis].
-        5. Once you make a diagnosis in the historical response, you must immediately stop the conversation and only reply with "Diagnosis: [Specific Diagnosis]."
-        6. Minimize the total number of questions while gathering the necessary information.
+        4. You can only request either a physical examination or laboratory tests in a single conversation. If you need both tests, please put them in two separate conversations.
+        5. After gathering enough information, provide the final diagnosis using the format: Diagnosis: [Specific Diagnosis].
+        6. Once you make a diagnosis in the historical response, you must immediately stop the conversation and only reply with "Diagnosis: [Specific Diagnosis]."
+        7. Minimize the total number of questions while gathering the necessary information.
 
         Please follow these guidelines:
         - Avoid repeating questions that have already been asked. If no new questions are necessary, make the diagnosis as soon as possible.

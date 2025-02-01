@@ -1,15 +1,22 @@
 # This file defines the patient agent, doctor agent and laboratory agent,then agents will interact with each other to simulate a medical diagnosis process.
-from typing import List
-import openai  # OpenAI API is pretty expensive,try to find something to change it
 # loading dataset
 import json
-from utils import asking_question, DataDistributor, evaluate
-from patient import Patient
-from laboratory import Laboratory
-from physical_examination_findings import PhysicalExamination
+import random
+import sys
+from typing import List
+
+import openai  # OpenAI API is pretty expensive,try to find something to change it
+
 from doctor import Doctor
+from laboratory import Laboratory
+from patient import Patient
+from physical_examination_findings import PhysicalExamination
+from utils import DataDistributor, evaluate
+#gpt-4o-mini is the cheapest model
+
 # delete it before submitting
 openai.api_key = "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"
+
 
 # 逻辑：三个agent，病人、医生和实验室
 
@@ -24,7 +31,7 @@ class ClinicalInteract:
         num_of_cases (int): The total number of patient cases in the dataset.
     """
 
-    def __init__(self, data):
+    def __init__(self, data , bias=None,doctor_backend="gpt-4o"):
         """
         Initializes the ClinicalInteract object with the provided dataset.
 
@@ -33,6 +40,8 @@ class ClinicalInteract:
         """
         self.data = data
         self.num_of_cases = len(data)
+        self.bias = bias
+        self.doctor_backend = doctor_backend
 
     def get_samples(self, index_list: List[int]) -> List[DataDistributor]:
         """
@@ -52,28 +61,35 @@ class ClinicalInteract:
         for idx in index_list:
             if idx < 0 or idx >= self.num_of_cases:
                 raise IndexError(f"Index {idx} is out of bounds.")
-        return [DataDistributor(self.data[idx]) for idx in index_list]
+        return [DataDistributor(self.data[idx], idx) for idx in index_list]
 
-    def start_inference(self, sample_id_list: List[int], total_inferences=5):
+    def start_inference(self, sample_id_list: List[int] = None, num_sample: int = 0, total_inferences=5):
         """
         Starts the inference process for the given list of sample IDs.
 
         Args:
             sample_id_list (List[int]): A list of sample IDs to be used for inference.
             total_inferences (int, optional): The number of inferences to perform. Defaults to 10.
-
+            num_sample (int, optional): The number of samples to randomly select for inference. Defaults to 0.
         """
-        samples = self.get_samples(sample_id_list)
+        if sample_id_list is not None:
+            samples = self.get_samples(sample_id_list)
+        else:
+            if num_sample > self.num_of_cases or num_sample <= 0:
+                raise ValueError(f"Number of samples requested exceeds the total number of cases or is invalid.")
+            sample_id_list = random.sample(list(range(self.num_of_cases)), num_sample)
+            samples = self.get_samples(sample_id_list)
 
         correct_num = 0  # correct number of total cases
 
         for idx, _case in enumerate(samples, start=1):
+            print(f"Case {_case.index+1}")
             # initial data
-            patient_agent = Patient(_case)
+            patient_agent = Patient(_case, bias=self.bias)
             # 缺医生助理
             physicalExamination = PhysicalExamination(_case)
             laboratory = Laboratory(_case)
-            doctor = Doctor(max_conversation=total_inferences)
+            doctor = Doctor(max_conversation=total_inferences, backend=self.doctor_backend)
 
             # start inference
             patient_answer = ""
@@ -116,8 +132,7 @@ class ClinicalInteract:
             print(f"Accuracy={correct_num / idx:.2%},total {idx}cases,{correct_num} are right")
 
 
-# Now we can test the doctor agent
-file_path = "datasets/filtered_medqa_test_set_final_version.jsonl"
+file_path = "../datasets/filtered_medqa_test_set_final_version.jsonl"
 data = []
 with open(file_path, "r", encoding="utf-8") as f:
     for line in f:
@@ -126,7 +141,17 @@ with open(file_path, "r", encoding="utf-8") as f:
         # 如果这行内容不是空的，就解析成 Python 对
         data.append(json.loads(line))
 
-#1.增加随机选择数据集的功能
-#2.把大文件分成小文件
-clinical_interact = ClinicalInteract(data)
-clinical_interact.start_inference([0], total_inferences=20)
+# 1.增加随机选择数据集的功能
+# 2.把大文件分成小文件
+
+
+
+output_file = ("experiment_record/QwQ-plus_data0-50_inference23.txt")
+
+with open(output_file, "w", encoding="utf-8") as file:
+    sys.stdout = file
+
+    clinical_interact = ClinicalInteract(data, doctor_backend="qwen-plus")
+    clinical_interact.start_inference(range(0,50), total_inferences=23)
+
+

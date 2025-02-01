@@ -7,7 +7,7 @@ class Patient:
         It generates responses based on the patient's medical history and bias type.
     """
 
-    def __init__(self, data_distributor, backend="gpt4o", bias=None):
+    def __init__(self, data_distributor, backend="gpt-4o-mini", bias=None):
 
         self.info = data_distributor.patient_information
         self.backend = backend
