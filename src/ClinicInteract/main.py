@@ -12,7 +12,8 @@ from laboratory import Laboratory
 from patient import Patient
 from physical_examination_findings import PhysicalExamination
 from utils import DataDistributor, evaluate
-#gpt-4o-mini is the cheapest model
+import builtins
+# gpt-4o-mini is the cheapest model
 
 # delete it before submitting
 openai.api_key = "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"
@@ -31,7 +32,7 @@ class ClinicalInteract:
         num_of_cases (int): The total number of patient cases in the dataset.
     """
 
-    def __init__(self, data , bias=None,doctor_backend="gpt-4o"):
+    def __init__(self, data, bias=None, doctor_backend="gpt-4o"):
         """
         Initializes the ClinicalInteract object with the provided dataset.
 
@@ -63,7 +64,9 @@ class ClinicalInteract:
                 raise IndexError(f"Index {idx} is out of bounds.")
         return [DataDistributor(self.data[idx], idx) for idx in index_list]
 
-    def start_inference(self, sample_id_list: List[int] = None, num_sample: int = 0, total_inferences=5):
+    def start_inference(self, sample_id_list: List[int] = None, num_sample: int = 0, total_inferences=5, bias=None,file=None):
+        if file is not None:
+            print = functools.partial(builtins.print, file=file)
         """
         Starts the inference process for the given list of sample IDs.
 
@@ -83,9 +86,9 @@ class ClinicalInteract:
         correct_num = 0  # correct number of total cases
 
         for idx, _case in enumerate(samples, start=1):
-            print(f"Case {_case.index+1}")
+            print(f"Case {_case.index + 1}")
             # initial data
-            patient_agent = Patient(_case, bias=self.bias)
+            patient_agent = Patient(_case, bias=self.bias if bias is None else bias)
             # 缺医生助理
             physicalExamination = PhysicalExamination(_case)
             laboratory = Laboratory(_case)
@@ -144,14 +147,31 @@ with open(file_path, "r", encoding="utf-8") as f:
 # 1.增加随机选择数据集的功能
 # 2.把大文件分成小文件
 
+import threading
+
+import functools
+def main(bias, num_sample):
+    output_file = f"../experiment_record/deepseekV3_data0-50_inference23_{bias}_secondtest.txt"
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        clinical_interact = ClinicalInteract(data, doctor_backend="deepseek-chat", bias=bias)
+        clinical_interact.start_inference(range(0, num_sample), total_inferences=23,file=f)
 
 
-output_file = ("experiment_record/QwQ-plus_data0-50_inference23.txt")
+bias_list = [
+    None
+    # "distrust",
+    # "preconceived_diagnosis",
+    # "non_scientific",
+    # "information_overload",
+    # "self_presentation",
+]
+threads = []
+for bias in bias_list:
+    thread = threading.Thread(target=main, args=(bias, 50))
+    thread.start()
+    threads.append(thread)
 
-with open(output_file, "w", encoding="utf-8") as file:
-    sys.stdout = file
-
-    clinical_interact = ClinicalInteract(data, doctor_backend="qwen-plus")
-    clinical_interact.start_inference(range(0,50), total_inferences=23)
-
-
+# 等待所有线程执行完毕
+for thread in threads:
+    thread.join()
