@@ -4,18 +4,21 @@
 # Date: 2025-1-22
 # ver: 0.2
 
+#任务：仅返回 Retrieved 到的文本
+
 # 下一步：1.统一api  2.将pubmed改为百度云的数据集
 import tiktoken
-from utils import RetrievalSystem
-from template import *
+from .utils_RAG import RetrievalSystem
+from .template import *
 from src.ClinicInteract.cofig import Config
 import re
 from openai import OpenAI
-
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
 llm_name = "OpenAI/gpt-3.5-turbo-16k"
 rag = True
 corpus_name = "PubMed"
-db_dir = "corpus"
+db_dir = current_dir+"/corpus"
 
 
 def _initialize_model():
@@ -50,7 +53,7 @@ def init():
     _initialize_model()
 
 
-def answer(question, options=None, k=32):
+def answer(question, options=None, k=32,return_rag_result_only=True):
     '''
         question (str): question to be answered
         options (Dict[str, str]): options to be chosen from   #如果选项数是固定的，那么也可以使用list
@@ -60,14 +63,16 @@ def answer(question, options=None, k=32):
         有一个打分模块对这些片段进行打分，然后选取分数最高的k个片段返回给大模型。，这就是rrf
         rrf_k主要用于检索融合。检索融合可能要删除，因为MedCPT的扩展性一般
         '''
+    init()
     global tokenizer
 
     if options is not None:
         options = '\n'.join([key + ". " + options[key] for key in sorted(options.keys())])
     else:
-        options = ''  # double check this later!!!!!! See if new prompt templates are needed.
+        options = ''
 
     # retrieve relevant snippets 检索相关片段
+    answers=[]
     if rag:
         retrieved_snippets, scores = retrieval_system.retrieve(question, k=k)
         # 因为这是个检索模型，所以它的retrieve方法返回的是检索到的片段和它们的分数。如果不需要模型融合，那么rrf_k就是k
@@ -78,25 +83,11 @@ def answer(question, options=None, k=32):
             contexts = [""]
         # 根据 self.llm_name 的不同，使用 self.tokenizer 对 contexts 列表进行编码和截断处理，确保上下文长度不超过
         # self.context_length。
-
         contexts = [tokenizer.decode(tokenizer.encode("\n".join(contexts))[:context_length])]
 
-    else:
-        retrieved_snippets = []
-        scores = []
-        contexts = []
+        if return_rag_result_only:
+            return contexts, scores
 
-    # generate answers
-    answers = []
-    if not rag:
-        prompt_cot = templates["cot_prompt"].render(question=question, options=options)
-        messages = [
-            {"role": "system", "content": templates["cot_system"]},
-            {"role": "user", "content": prompt_cot}
-        ]
-        ans = generate(messages)
-        answers.append(re.sub("\s+", " ", ans))
-    else:
         for context in contexts:
             prompt_medrag = templates["rag_prompt"].render(context=context, question=question,
                                                               options=options)
@@ -107,6 +98,19 @@ def answer(question, options=None, k=32):
             print(messages)
             ans = generate(messages)
             answers.append(re.sub("\s+", " ", ans))
+
+    else:
+        retrieved_snippets = []
+        scores = []
+
+    # generate answers
+        prompt_cot = templates["cot_prompt"].render(question=question, options=options)
+        messages = [
+            {"role": "system", "content": templates["cot_system"]},
+            {"role": "user", "content": prompt_cot}
+        ]
+        ans = generate(messages)
+        answers.append(re.sub("\s+", " ", ans))
 
     return answers[0] if len(answers) == 1 else answers, retrieved_snippets, scores
 
@@ -132,7 +136,11 @@ def generate(messages):
 if __name__ == "__main__":
     # Test
 
-    question = "A lesion causing compression of the facial nerve at the stylomastoid foramen will cause ipsilateral"
+    question = """Diagnosis of joint pain, including differential diagnosis, clinical diagnosis, and diagnostic criteria. 
+Symptoms include knee swelling and pain, morning stiffness, and nail pitting. Possible conditions: 
+psoriatic arthritis, rheumatoid arthritis, ankylosing spondylitis. Diagnostic methods: radiographic findings, MRI diagnosis, biomarkers for diagnosis.
+"""
+ #"A lesion causing compression of the facial nerve at the stylomastoid foramen will cause ipsilateral"
     options = {
         "A": "paralysis of the facial muscles.",
         "B": "paralysis of the facial muscles and loss of taste.",
@@ -142,5 +150,6 @@ if __name__ == "__main__":
 
     init()
 
-    answer, _, _ = answer(question=question, options=options)
-    print(answer)
+    answer= answer(question=question, options=None,return_rag_result_only=True)
+    print(answer[0])
+    print(answer[1])
