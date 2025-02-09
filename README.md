@@ -65,8 +65,14 @@ The ClinicInteract framework consists of:
 
 ### Prerequisites
 - Python 3.8+  
-- Your preferred LLM API (OpenAI, etc.) or local language model checkpoint.
-
+- Your preferred LLM API (OpenAI, etc.) 
+- Recommended API (This is the most cost-effective API I have tested): 
+Silicon Flow Deepseek V3/R1  
+Registration link: https://siliconflow.cn/
+- The best way to use the Tongyi Qianwen series models is through Alibaba Cloud's Bailian API. You can register at the following address:  
+https://cn.aliyun.com/product/bailian?from_alibabacloud=
+- In src/ClinicInteract/config.py, put all API keys in the correct places.
+- PubMed Dataset: #put it later   #Add a more minimal Conda environment later.
 
 ### Installation
 
@@ -74,3 +80,48 @@ The ClinicInteract framework consists of:
    ```bash
    git clone https://github.com/JacobChangUCL/Final_Project.git
    cd Final_Project
+    ```
+2. **Install the required packages**
+    ```bash
+    conda env create -f environment.yml
+    ```
+3. **Activate the environment**
+    ```bash
+    conda activate ClinicInteract
+    ```
+4. **run the main.py file**
+    ```bash
+    python src/ClinicInteract/main.py
+    ```
+   
+2. **Project Structure**  
+```plaintext
+Final_Project/
+├── data/
+├── notebooks/
+├── src/
+│   ├── ClinicInteract/
+│   │   ├── __init__.py
+│   │   ├── baseline.py
+│   │   ├── config.py
+│   │   ├── doctor.py
+│   │   ├── doctor_information_pr.py
+│   │   ├── Doctor_RAG.py
+│   │   ├── laboratory.py
+│   │   ├── main.py
+│   │   ├── patient.py
+│   │   ├── physical_examination_.py
+│   │   ├── prompt_dict.py
+│   │   ├── prompts.txt
+│   │   ├── Rag_optimizer.py
+│   │   ├── test.py
+│   │   ├── utils.py
+├── datasets/
+├── figs/
+├── picture_drawer/
+├── RAG/
+│   ├── corpus/
+│   ├── data/
+│   ├── __init__.py
+│   ├── rag.py
+```
