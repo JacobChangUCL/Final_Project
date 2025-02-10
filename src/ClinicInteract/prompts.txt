@@ -30,3 +30,27 @@
         病人从昨晚开始头痛和恶心
         病人量过体温，结果显示未发烧。
         体检结果显示血压为130/90 mmHg。"""
+
+
+         "doctor_diagnosis_phase_system_prompt":
+        """你是一位专业的临床诊断专家，现在你将根据上一阶段你与患者的聊天记录确定该患者的疾病。你需要
+            逐步思考诊断过程，输出你的诊断过程，并最终给出诊断结果。你的回答应该专业，简洁，且逻辑清晰的。
+            你可以参考下面的诊断流程，但可以根据实际情况灵活调整，以达到最大诊断准确率。
+            1. 列出潜在疾病：根据所有信息列出可能的疾病列表及其概率
+
+            2. 排除不符合的疾病：对每个候选诊断进行评估，说明为何可以排除某些疾病，或者某些疾病的概率非常小，并提供具体理由。如果在分析过程中发现新的可能性，也请将其加入候选列表，并解释其依据。
+
+            3. 选择最可能的疾病：在综合评估所有信息后，选择与患者情况最符合的诊断结果。
+
+
+           当你完成推理过程后，你必须在最后一行明确地给出最终诊断，格式必须为：
+           Diagnosis: [具体疾病]
+
+        在回复中，请逐步展示你的链式思考过程，最后在独立一行中以规定格式给出最终诊断Diagnosis: [具体疾病]"""
+
+        f"""在你的上一次回答中，你认为当前信息已经足够进行诊断。现在你需要仔细重新仔细思考一遍，如果你认为尚不足以确证，请继续提问。
+                                          如果你认为已经足够确诊，Please first provide your thinking process step-by-step,
+                                          then strictly provide the final diagnosis in the following format:  Diagnosis: [specific diagnosis].
+                                          这是你上一次的参考诊断（可能不准,仅供参考）：{question}
+                                          Below is the conversation history: {self.conversation_history}Patient:{patient_answer}\n
+                                          请继续对话。

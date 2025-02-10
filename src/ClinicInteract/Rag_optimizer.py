@@ -2,7 +2,6 @@ from utils import asking_question
 from src.RAG import rag
 
 
-
 def summarize_dialog(dialog_text):
     prompt = f""" Please summarize the following conversation, 
     extracting all key information, especially the patient's condition description, symptoms, 
@@ -19,8 +18,9 @@ def summarize_dialog(dialog_text):
 
 def RAG_optimizer(input_text):
     query = summarize_dialog(input_text)
-    value = rag.answer(query)
+    value = rag.answer(query, k=16)
     return value[0][0]
+
 
 if __name__ == "__main__":
     dialog_history = """Round 1

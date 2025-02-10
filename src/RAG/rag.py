@@ -4,7 +4,7 @@
 # Date: 2025-1-22
 # ver: 0.2
 
-#任务：仅返回 Retrieved 到的文本
+# 任务：仅返回 Retrieved 到的文本
 
 # 下一步：1.统一api  2.将pubmed改为百度云的数据集
 import tiktoken
@@ -14,11 +14,12 @@ from src.ClinicInteract.cofig import Config
 import re
 from openai import OpenAI
 import os
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 llm_name = "OpenAI/gpt-3.5-turbo-16k"
 rag = True
 corpus_name = "PubMed"
-db_dir = current_dir+"/corpus"
+db_dir = current_dir + "/corpus"
 
 
 def _initialize_model():
@@ -53,7 +54,7 @@ def init():
     _initialize_model()
 
 
-def answer(question, options=None, k=32,return_rag_result_only=True):
+def answer(question, options=None, k=32, return_rag_result_only=True):
     '''
         question (str): question to be answered
         options (Dict[str, str]): options to be chosen from   #如果选项数是固定的，那么也可以使用list
@@ -72,7 +73,7 @@ def answer(question, options=None, k=32,return_rag_result_only=True):
         options = ''
 
     # retrieve relevant snippets 检索相关片段
-    answers=[]
+    answers = []
     if rag:
         retrieved_snippets, scores = retrieval_system.retrieve(question, k=k)
         # 因为这是个检索模型，所以它的retrieve方法返回的是检索到的片段和它们的分数。如果不需要模型融合，那么rrf_k就是k
@@ -90,7 +91,7 @@ def answer(question, options=None, k=32,return_rag_result_only=True):
 
         for context in contexts:
             prompt_medrag = templates["rag_prompt"].render(context=context, question=question,
-                                                              options=options)
+                                                           options=options)
             messages = [
                 {"role": "system", "content": templates["rag_system"]},
                 {"role": "user", "content": prompt_medrag}
@@ -103,7 +104,7 @@ def answer(question, options=None, k=32,return_rag_result_only=True):
         retrieved_snippets = []
         scores = []
 
-    # generate answers
+        # generate answers
         prompt_cot = templates["cot_prompt"].render(question=question, options=options)
         messages = [
             {"role": "system", "content": templates["cot_system"]},
@@ -135,21 +136,24 @@ def generate(messages):
 
 if __name__ == "__main__":
     # Test
-
-    question = """Diagnosis of joint pain, including differential diagnosis, clinical diagnosis, and diagnostic criteria. 
-Symptoms include knee swelling and pain, morning stiffness, and nail pitting. Possible conditions: 
-psoriatic arthritis, rheumatoid arthritis, ankylosing spondylitis. Diagnostic methods: radiographic findings, MRI diagnosis, biomarkers for diagnosis.
-"""
- #"A lesion causing compression of the facial nerve at the stylomastoid foramen will cause ipsilateral"
+    question = """A junior orthopaedic surgery resident is completing a carpal tunnel repair with the department chairman as the attending physician. 
+    During the case, the resident inadvertently cuts a flexor tendon. 
+    The tendon is repaired without complication. 
+    The attending tells the resident that the patient will do fine, 
+    and there is no need to report this minor complication that will not harm the patient, 
+    as he does not want to make the patient worry unnecessarily. 
+    He tells the resident to leave this complication out of the operative report. 
+    Which of the following is the correct next action for the resident to take?"""
     options = {
-        "A": "paralysis of the facial muscles.",
-        "B": "paralysis of the facial muscles and loss of taste.",
-        "C": "paralysis of the facial muscles, loss of taste and lacrimation.",
-        "D": "paralysis of the facial muscles, loss of taste, lacrimation and decreased salivation."
+        "A": "Disclose the error to the patient but leave it out of the operative report",
+        "B": "Disclose the error to the patient and put it in the operative report",
+        "C": "Tell the attending that he cannot fail to disclose this mistake",
+        "D": "Report the physician to the ethics committee",
+        "E": "Refuse to dictate the operative report"
     }
 
     init()
 
-    answer= answer(question=question, options=None,return_rag_result_only=True)
+    answer = answer(question=question, options=None, return_rag_result_only=True)
     print(answer[0])
     print(answer[1])

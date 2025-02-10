@@ -2,22 +2,22 @@
 # loading dataset
 import json
 import random
-import sys
 from typing import List
 
 import openai  # OpenAI API is pretty expensive,try to find something to change it
 
-from doctor import Doctor
+from Doctor_RAG import Doctor
 from laboratory import Laboratory
 from patient import Patient
 from physical_examination_findings import PhysicalExamination
 from utils import DataDistributor, evaluate
 import builtins
+from cofig import Config
+openai.api_key = Config.openai_api_key
+
 # gpt-4o-mini is the cheapest model
 
 # delete it before submitting
-openai.api_key = "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"
-
 
 # 逻辑：三个agent，病人、医生和实验室
 
@@ -64,7 +64,8 @@ class ClinicalInteract:
                 raise IndexError(f"Index {idx} is out of bounds.")
         return [DataDistributor(self.data[idx], idx) for idx in index_list]
 
-    def start_inference(self, sample_id_list: List[int] = None, num_sample: int = 0, total_inferences=5, bias=None,file=None):
+    def start_inference(self, sample_id_list: List[int] = None, num_sample: int = 0, total_inferences=5, bias=None,
+                        file=None):
         if file is not None:
             print = functools.partial(builtins.print, file=file)
         """
@@ -92,7 +93,7 @@ class ClinicalInteract:
             # 缺医生助理
             physicalExamination = PhysicalExamination(_case)
             laboratory = Laboratory(_case)
-            doctor = Doctor(max_conversation=total_inferences, backend=self.doctor_backend)
+            doctor = Doctor(max_conversation=total_inferences, backend=self.doctor_backend,use_RAG=True)
 
             # start inference
             patient_answer = ""
@@ -129,6 +130,8 @@ class ClinicalInteract:
             else:
                 doctor_diagnosis = doctor.return_question(patient_answer)
 
+            doctor_diagnosis = doctor_diagnosis.split("Diagnosis:")[-1]
+
             print(f"True disease is {_case.disease},doctor diagnosis is {doctor_diagnosis}")
             if evaluate(_case.disease, doctor_diagnosis) == "Yes":
                 correct_num += 1
@@ -150,25 +153,27 @@ with open(file_path, "r", encoding="utf-8") as f:
 import threading
 
 import functools
-def main(bias, num_sample):
-    output_file = f"../experiment_record/deepseekV3_data0-50_inference23_{bias}_secondtest.txt"
+
+
+def main(start, stop):
+    output_file = f"../experiment_record/deepseekV3_data0-50_inference23_{start}-{stop}_2stage_update_evaluation_RAG.txt"
 
     with open(output_file, "w", encoding="utf-8") as f:
-        clinical_interact = ClinicalInteract(data, doctor_backend="deepseek-chat", bias=bias)
-        clinical_interact.start_inference(range(0, num_sample), total_inferences=23,file=f)
+        clinical_interact = ClinicalInteract(data, doctor_backend="deepseek-chat")
+        clinical_interact.start_inference(range(start, stop), total_inferences=23, file=f)
 
 
-bias_list = [
-    None
-    # "distrust",
-    # "preconceived_diagnosis",
-    # "non_scientific",
-    # "information_overload",
-    # "self_presentation",
-]
+# bias_list = [
+#     None
+#     # "distrust",
+#     # "preconceived_diagnosis",
+#     # "non_scientific",
+#     # "information_overload",
+#     # "self_presentation",
+# ]
 threads = []
-for bias in bias_list:
-    thread = threading.Thread(target=main, args=(bias, 50))
+for i in range(2,3):   #remember,when use RAG, the max threads should be 2or 3 to under the maximum api limit
+    thread = threading.Thread(target=main, args=(i * 10, 10 + i * 10))
     thread.start()
     threads.append(thread)
 

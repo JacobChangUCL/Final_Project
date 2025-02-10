@@ -58,7 +58,7 @@ class DataDistributor:
         }
 
 
-def asking_question(model_name: str, prompt, system_prompt, max_retries=4, time_out=40):
+def asking_question(model_name: str, prompt, system_prompt, max_retries=10, time_out=5):
     """
     ask the model and return the answer
     """
@@ -100,7 +100,7 @@ def asking_question(model_name: str, prompt, system_prompt, max_retries=4, time_
                     ]
                 }
                 headers = {
-                    "Authorization": Config.Silicon_flow,
+                    "Authorization": Config.silicon_flow,
                     "Content-Type": "application/json"
                 }
 

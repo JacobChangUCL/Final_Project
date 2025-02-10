@@ -7,9 +7,9 @@ import sys
 
 # openai-version should be 1.59.9 to support deepseek
 
-# openai.api_key = "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"
 # deepseek will use openai api format
-deepseek_api_key = "sk-2723f21ed00148bf971d4d5160ca3b31"
+deepseek_api_key = "your_deepseek_api_key"
+
 
 
 class Dataset:
