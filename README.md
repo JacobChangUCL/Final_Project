@@ -130,3 +130,11 @@ Final_Project/
 │   ├── template.py
 │   ├── utils_RAG.py
 ```
+This project uses PubMed and its preprocessing methods from the following repository：
+- https://huggingface.co/datasets/MedRAG/pubmed)](https://huggingface.co/datasets/MedRAG/pubmed
+- @article{xiong2024benchmarking,
+    title={Benchmarking Retrieval-Augmented Generation for Medicine}, 
+    author={Guangzhi Xiong and Qiao Jin and Zhiyong Lu and Aidong Zhang},
+    journal={arXiv preprint arXiv:2402.13178},
+    year={2024}
+}
